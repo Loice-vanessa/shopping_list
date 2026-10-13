@@ -12,10 +12,27 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Shopping List',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(colorSchemeSeed: Colors.green, useMaterial3: true),
+      theme: ThemeData(
+        colorSchemeSeed: const Color(0xFF00897B),
+        useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFFF3F7F6),
+      ),
       home: const HomeScreen(title: 'Shopping List'),
     );
   }
+}
+
+// Each category has its own icon and colour, used on the list and the details screen.
+IconData categoryIcon(String category) {
+  if (category == 'Drinks') return Icons.local_drink;
+  if (category == 'Home') return Icons.home;
+  return Icons.bakery_dining;
+}
+
+Color categoryColor(String category) {
+  if (category == 'Drinks') return const Color(0xFF1E88E5);
+  if (category == 'Home') return const Color(0xFF8E24AA);
+  return const Color(0xFFF4511E);
 }
 
 // The model: one thing to buy.
@@ -158,49 +175,102 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget buildList(List<Item> shown) {
     // Part 1: a truly empty list.
     if (items.isEmpty) {
-      return const Center(child: Text('Your list is empty'));
+      return emptyMessage(Icons.shopping_basket_outlined, 'Your list is empty');
     }
     // Part 5: the filter has nothing to show.
     if (shown.isEmpty) {
-      return const Center(child: Text('Nothing here'));
+      return emptyMessage(Icons.search_off, 'Nothing here');
     }
+    final colors = Theme.of(context).colorScheme;
     return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
       itemCount: shown.length,
       itemBuilder: (context, index) {
         final item = shown[index];
-        return ListTile(
-          title: Text(
-            item.name,
-            style: TextStyle(
-              decoration: item.bought ? TextDecoration.lineThrough : null,
-              color: item.bought ? Colors.grey : null,
+        final color = categoryColor(item.category);
+        return Card(
+          elevation: 0,
+          color: item.bought ? colors.surfaceContainerHighest : Colors.white,
+          margin: const EdgeInsets.symmetric(vertical: 4),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: color.withValues(alpha: 0.35)),
+          ),
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: color.withValues(alpha: 0.15),
+              child: Icon(
+                item.bought ? Icons.check : categoryIcon(item.category),
+                color: item.bought ? Colors.grey : color,
+              ),
             ),
-          ),
-          subtitle: Text(
-            item.note.isEmpty ? item.category : '${item.category} · ${item.note}',
-          ),
-          onTap: () => toggleBought(item),
-          onLongPress: () => openDetails(item),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.remove),
-                onPressed: () => decrease(item),
+            title: Text(
+              item.name,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                decoration: item.bought ? TextDecoration.lineThrough : null,
+                color: item.bought ? Colors.grey : null,
               ),
-              Text('${item.quantity}', style: const TextStyle(fontSize: 16)),
-              IconButton(
-                icon: const Icon(Icons.add),
-                onPressed: () => increase(item),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () => deleteItem(item),
-              ),
-            ],
+            ),
+            subtitle: Text(
+              item.note.isEmpty
+                  ? item.category
+                  : '${item.category} · ${item.note}',
+            ),
+            onTap: () => toggleBought(item),
+            onLongPress: () => openDetails(item),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: colors.primaryContainer,
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.remove),
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () => decrease(item),
+                      ),
+                      Text(
+                        '${item.quantity}',
+                        style: const TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.add),
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () => increase(item),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.delete),
+                  color: Colors.red.shade400,
+                  onPressed: () => deleteItem(item),
+                ),
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  Widget emptyMessage(IconData icon, String text) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 72, color: Theme.of(context).colorScheme.primary),
+          const SizedBox(height: 12),
+          Text(text, style: Theme.of(context).textTheme.titleMedium),
+        ],
+      ),
     );
   }
 
@@ -218,10 +288,27 @@ class _HomeScreenState extends State<HomeScreen> {
       shown = [...toBuy, ...bought];
     }
 
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: colors.primary,
+        foregroundColor: colors.onPrimary,
+        title: Row(
+          children: [
+            const Icon(Icons.shopping_basket),
+            const SizedBox(width: 10),
+            Text(widget.title,
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+          ],
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16),
+            child: Center(
+              child: Text('${toBuy.length} to buy · ${bought.length} bought'),
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -232,15 +319,24 @@ class _HomeScreenState extends State<HomeScreen> {
                 Expanded(
                   child: TextField(
                     controller: controller,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'New item',
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.add_shopping_cart),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
                     ),
                     onSubmitted: (_) => addItem(),
                   ),
                 ),
                 const SizedBox(width: 8),
-                ElevatedButton(onPressed: addItem, child: const Text('Add')),
+                FilledButton.icon(
+                  onPressed: addItem,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add'),
+                ),
               ],
             ),
           ),
@@ -310,8 +406,11 @@ class _DetailsScreenState extends State<DetailsScreen> {
 
   Widget categoryChip(String label) {
     return ChoiceChip(
+      avatar: Icon(categoryIcon(label), color: categoryColor(label)),
       label: Text(label),
       selected: category == label,
+      showCheckmark: false,
+      selectedColor: categoryColor(label).withValues(alpha: 0.2),
       onSelected: (_) {
         setState(() {
           category = label;
@@ -322,16 +421,28 @@ class _DetailsScreenState extends State<DetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Item details'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: colors.primary,
+        foregroundColor: colors.onPrimary,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Center(
+              child: CircleAvatar(
+                radius: 40,
+                backgroundColor:
+                    categoryColor(category).withValues(alpha: 0.15),
+                child: Icon(categoryIcon(category),
+                    size: 40, color: categoryColor(category)),
+              ),
+            ),
+            const SizedBox(height: 20),
             TextField(
               controller: nameController,
               decoration: const InputDecoration(
@@ -349,7 +460,8 @@ class _DetailsScreenState extends State<DetailsScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            const Text('Category', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('Category',
+                style: TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -362,7 +474,11 @@ class _DetailsScreenState extends State<DetailsScreen> {
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(onPressed: save, child: const Text('Save')),
+              child: FilledButton.icon(
+                onPressed: save,
+                icon: const Icon(Icons.save),
+                label: const Text('Save'),
+              ),
             ),
           ],
         ),
