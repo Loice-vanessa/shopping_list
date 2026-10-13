@@ -13,9 +13,9 @@ A Flutter shopping list app, upgraded into a real app.
 
 ## Screenshots
 
-| Quantities | Undo | Bought filter | Item details |
-|---|---|---|---|
-| ![](screenshots/quantities.png) | ![](screenshots/undo.png) | ![](screenshots/bought.png) | ![](screenshots/details.png) |
+| My list | Quantities | Bought filter |
+|---|---|---|
+| ![My list](screenshots/home.png) | ![Quantities](screenshots/quantities.png) | ![Bought filter](screenshots/bought.png) |
 
 ## Think
 
