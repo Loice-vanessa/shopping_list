@@ -85,6 +85,10 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget buildList() {
+    // Part 1: a truly empty list.
+    if (items.isEmpty) {
+      return const Center(child: Text('Your list is empty'));
+    }
     return ListView.builder(
       itemCount: items.length,
       itemBuilder: (context, index) {
