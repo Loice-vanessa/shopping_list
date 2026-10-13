@@ -47,6 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
     Item(name: 'Rice'),
   ];
   final TextEditingController controller = TextEditingController();
+  String filter = 'All';
 
   @override
   void dispose() {
@@ -106,12 +107,12 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  // Part 4: remember where the item was, and let Undo put it back
-  // in exactly the same place.
-  void deleteItem(int index) {
-    final item = items[index];
+  // Parts 4 and 5: delete the item itself (not an index), remember where it
+  // was, and let Undo put it back in exactly the same place.
+  void deleteItem(Item item) {
+    final position = items.indexOf(item);
     setState(() {
-      items.removeAt(index);
+      items.remove(item);
     });
     showMessage(
       '${item.name} removed',
@@ -119,22 +120,39 @@ class _HomeScreenState extends State<HomeScreen> {
         label: 'Undo',
         onPressed: () {
           setState(() {
-            items.insert(index <= items.length ? index : items.length, item);
+            items.insert(
+                position <= items.length ? position : items.length, item);
           });
         },
       ),
     );
   }
 
-  Widget buildList() {
+  Widget filterChip(String label) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: filter == label,
+      onSelected: (_) {
+        setState(() {
+          filter = label;
+        });
+      },
+    );
+  }
+
+  Widget buildList(List<Item> shown) {
     // Part 1: a truly empty list.
     if (items.isEmpty) {
       return const Center(child: Text('Your list is empty'));
     }
+    // Part 5: the filter has nothing to show.
+    if (shown.isEmpty) {
+      return const Center(child: Text('Nothing here'));
+    }
     return ListView.builder(
-      itemCount: items.length,
+      itemCount: shown.length,
       itemBuilder: (context, index) {
-        final item = items[index];
+        final item = shown[index];
         return ListTile(
           title: Text(
             item.name,
@@ -158,7 +176,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               IconButton(
                 icon: const Icon(Icons.delete),
-                onPressed: () => deleteItem(index),
+                onPressed: () => deleteItem(item),
               ),
             ],
           ),
@@ -169,6 +187,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Part 5: never change items to filter it; build a second list instead.
+    final toBuy = items.where((item) => !item.bought).toList();
+    final bought = items.where((item) => item.bought).toList();
+    List<Item> shown;
+    if (filter == 'To buy') {
+      shown = toBuy;
+    } else if (filter == 'Bought') {
+      shown = bought;
+    } else {
+      shown = [...toBuy, ...bought];
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
@@ -195,7 +225,18 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          Expanded(child: buildList()),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Wrap(
+              spacing: 8,
+              children: [
+                filterChip('All'),
+                filterChip('To buy'),
+                filterChip('Bought'),
+              ],
+            ),
+          ),
+          Expanded(child: buildList(shown)),
         ],
       ),
     );
