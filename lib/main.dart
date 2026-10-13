@@ -22,10 +22,12 @@ class MyApp extends StatelessWidget {
 class Item {
   final String name;
   bool bought;
+  int quantity;
 
   Item({
     required this.name,
     this.bought = false,
+    this.quantity = 1,
   });
 }
 
@@ -78,6 +80,20 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  // Part 2: + has no limit, − stops at 1.
+  void increase(Item item) {
+    setState(() {
+      item.quantity++;
+    });
+  }
+
+  void decrease(Item item) {
+    if (item.quantity <= 1) return;
+    setState(() {
+      item.quantity--;
+    });
+  }
+
   void deleteItem(int index) {
     setState(() {
       items.removeAt(index);
@@ -102,9 +118,23 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           onTap: () => toggleBought(item),
-          trailing: IconButton(
-            icon: const Icon(Icons.delete),
-            onPressed: () => deleteItem(index),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.remove),
+                onPressed: () => decrease(item),
+              ),
+              Text('${item.quantity}', style: const TextStyle(fontSize: 16)),
+              IconButton(
+                icon: const Icon(Icons.add),
+                onPressed: () => increase(item),
+              ),
+              IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () => deleteItem(index),
+              ),
+            ],
           ),
         );
       },
