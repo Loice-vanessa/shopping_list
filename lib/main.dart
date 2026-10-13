@@ -61,6 +61,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // Part 3: an item already on the list (any capitals or spaces) gets +1.
   void addItem() {
     final name = controller.text.trim();
     if (name.isEmpty) {
@@ -68,9 +69,20 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    setState(() {
-      items.add(Item(name: name));
-    });
+    final matches =
+        items.where((item) => item.name.toLowerCase() == name.toLowerCase());
+    if (matches.isNotEmpty) {
+      final existing = matches.first;
+      setState(() {
+        existing.quantity++;
+      });
+      showMessage(
+          '${existing.name} is already on the list: now ×${existing.quantity}');
+    } else {
+      setState(() {
+        items.add(Item(name: name));
+      });
+    }
     controller.clear();
   }
 
