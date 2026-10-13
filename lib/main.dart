@@ -54,10 +54,10 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  void showMessage(String text) {
+  void showMessage(String text, {SnackBarAction? action}) {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(text)),
+      SnackBar(content: Text(text), action: action),
     );
   }
 
@@ -106,10 +106,24 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  // Part 4: remember where the item was, and let Undo put it back
+  // in exactly the same place.
   void deleteItem(int index) {
+    final item = items[index];
     setState(() {
       items.removeAt(index);
     });
+    showMessage(
+      '${item.name} removed',
+      action: SnackBarAction(
+        label: 'Undo',
+        onPressed: () {
+          setState(() {
+            items.insert(index <= items.length ? index : items.length, item);
+          });
+        },
+      ),
+    );
   }
 
   Widget buildList() {
