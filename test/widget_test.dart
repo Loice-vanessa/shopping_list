@@ -20,11 +20,11 @@ void main() {
     await tester.pumpWidget(const MyApp());
 
     await tester.tap(find.byIcon(Icons.delete).at(1)); // Bread
-    await tester.pump();
+    await tester.pumpAndSettle(); // let the SnackBar finish sliding in
     expect(find.text('Bread'), findsNothing);
 
     await tester.tap(find.text('Undo'));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     final names = tester
         .widgetList<ListTile>(find.byType(ListTile))
