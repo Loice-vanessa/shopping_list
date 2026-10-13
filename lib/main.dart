@@ -19,15 +19,20 @@ class MyApp extends StatelessWidget {
 }
 
 // The model: one thing to buy.
+// name is not final any more: the details screen can rename an item (part 6).
 class Item {
-  final String name;
+  String name;
   bool bought;
   int quantity;
+  String note;
+  String category;
 
   Item({
     required this.name,
     this.bought = false,
     this.quantity = 1,
+    this.note = '',
+    this.category = 'Food',
   });
 }
 
@@ -128,6 +133,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // Part 6: open the details screen, redraw when the user comes back.
+  void openDetails(Item item) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => DetailsScreen(item: item)),
+    ).then((_) {
+      setState(() {});
+    });
+  }
+
   Widget filterChip(String label) {
     return ChoiceChip(
       label: Text(label),
@@ -161,7 +176,11 @@ class _HomeScreenState extends State<HomeScreen> {
               color: item.bought ? Colors.grey : null,
             ),
           ),
+          subtitle: Text(
+            item.note.isEmpty ? item.category : '${item.category} · ${item.note}',
+          ),
           onTap: () => toggleBought(item),
+          onLongPress: () => openDetails(item),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -238,6 +257,115 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           Expanded(child: buildList(shown)),
         ],
+      ),
+    );
+  }
+}
+
+// Part 6: the second screen.
+class DetailsScreen extends StatefulWidget {
+  const DetailsScreen({super.key, required this.item});
+
+  final Item item;
+
+  @override
+  State<DetailsScreen> createState() => _DetailsScreenState();
+}
+
+class _DetailsScreenState extends State<DetailsScreen> {
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController noteController = TextEditingController();
+  String category = 'Food';
+
+  @override
+  void initState() {
+    super.initState();
+    nameController.text = widget.item.name;
+    noteController.text = widget.item.note;
+    category = widget.item.category;
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    noteController.dispose();
+    super.dispose();
+  }
+
+  // The item only changes here, so the back arrow changes nothing.
+  void save() {
+    final name = nameController.text.trim();
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('The name cannot be empty')),
+      );
+      return;
+    }
+    widget.item.name = name;
+    widget.item.note = noteController.text.trim();
+    widget.item.category = category;
+    Navigator.pop(context);
+  }
+
+  Widget categoryChip(String label) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: category == label,
+      onSelected: (_) {
+        setState(() {
+          category = label;
+        });
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Item details'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(
+                labelText: 'Name',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: noteController,
+              decoration: const InputDecoration(
+                labelText: 'Note',
+                hintText: 'the 1 litre bottle',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text('Category', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              children: [
+                categoryChip('Food'),
+                categoryChip('Drinks'),
+                categoryChip('Home'),
+              ],
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(onPressed: save, child: const Text('Save')),
+            ),
+          ],
+        ),
       ),
     );
   }
